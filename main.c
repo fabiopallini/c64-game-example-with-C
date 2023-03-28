@@ -41,7 +41,7 @@ int main (void)
 	unsigned char x = 0;
 	unsigned char frame = 0;
 	unsigned char time = 0;
-	unsigned char sprite_x = 0;
+	unsigned char sprite_x = 30;
 	printf ("%c", 147);
 
 	POKE(v + 21, 255); // enable all sprites
@@ -106,7 +106,8 @@ int main (void)
 				POKE(14*64 + n, sprite_character[0][n]);
 			}
 		}
-
+		
+		// right
 		if((PEEK(0xDC01) & 0b00001000) == 0) {
 			POKE(v + 2, sprite_x += 1);
 			if(time >= 20){
@@ -119,6 +120,11 @@ int main (void)
 				time = 0;
 			}
 			time += 2;
+		}
+
+		// left
+		if((PEEK(0xDC01) & 0b00000100) == 0) {
+			POKE(v + 2, sprite_x -= 1);
 		}
 
 		rasterWait();
