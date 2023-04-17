@@ -61,7 +61,6 @@ void rasterWait(void) {
 int main (void)
 {
 	unsigned char n;
-	unsigned char x = 0;
 	unsigned char frame = 0;
 	unsigned char time = 0;
 	unsigned char sprite_x = 30;
@@ -77,11 +76,10 @@ int main (void)
 		POKE(13*64 + n, sprite[n]);
 	}*/
 
-	// stand pose
+	// stand right pose
 	for (n = 0 ; n < sizeof(sprite_character[0]); n++) {
 		POKE(14*64 + n, sprite_character[0][n]);
 	}
-
 
 	/*for (n = 0 ; n < 64; n++) {
 		POKE(13*64 + n, 255);
@@ -97,25 +95,14 @@ int main (void)
 	//POKE(v+29, 0b00000001); // x expand sprite 0
 	//POKE(v+23, 0b00000001); // y expand sprite 0
 
-	POKE(v + 0, (320/2)+(24/2));
+	//POKE(v + 0, (320/2)+(24/2)); // posX sprite 0
+	//POKE(v + 1, 100); // posY sprite 0
 	POKE(v + 2, sprite_x);
-	POKE(v + 3, 220);
+	POKE(v + 3, 220); // sprite_y
 
 	while(1)
 	{
 		//printf ("%d ", sprite_x);
-
-		if (x >= 130)
-		{
-			POKE(v+29, 0b00000001);
-			POKE(v+23, 0b00000001);
-			POKE(v + 0, (320/2));
-		}		
-		else 
-		{
-			POKE(v + 1, x);
-			//x += 1;
-		}
 
 		// if no key pressed show stand pose	
 		if(PEEK(0xDC01) == 255) {
@@ -132,16 +119,18 @@ int main (void)
 		// right
 		if((PEEK(0xDC01) & 0b00001000) == 0) {
 			direction = 1;
-			if(sprite_x >= 255)
+			if(sprite_x >= 255) // enable extra bit for sprite 1
 				POKE(53264, 0b00000010);
 			else {
+				// if extra bit is enabled and sprite position > 90 (out of screen on the right), 
+				// disable extra bit and place sprite to pos 0 (respawn on the left of the screen)
 				if(PEEK(53264) == 0b00000010 && sprite_x > 90){
 					POKE(53264, 0b00000000);
 					sprite_x = 0;
 				}
 			}
 			POKE(v + 2, sprite_x += 1);
-			if(frame == 0 || frame >= 3)
+			if(frame == 0 || frame >= 3) // if current frame is stand pose right or frame is a "left animation" frame
 				frame = 1;
 			if(time >= 20){
 				for (n = 0 ; n < sizeof(sprite_character[frame]); n++) {
@@ -158,14 +147,17 @@ int main (void)
 		// left
 		if((PEEK(0xDC01) & 0b00000100) == 0) {
 			direction = 0;
+			// if extra bit is disabled and pos sprite is going out of screen on the left
+			// respawn on the right of the screen
 			if(PEEK(53264) == 0b00000000 && sprite_x <= 0){
 				POKE(53264, 0b00000010);
 				sprite_x = 90;
 			}
 			else {
+				// if the extra bit is enabled (we are 255+ on the screen) and sprite pos is 0,
+				// disable extra bit and set sprite pos to 255 to start to count  
 				if(PEEK(53264) == 0b00000010 && sprite_x <= 0){
 					POKE(53264, 0b00000000);
-					sprite_x = 255;
 				}
 			}
 			POKE(v + 2, sprite_x -= 1);
